@@ -57,7 +57,7 @@
 #include "SpellAuras.h"
 #include "SpellHistory.h"
 #include "SpellMgr.h"
-#include "TemporarySummon.h"
+#include "TempSummon.h"
 #include "Totem.h"
 #include "Transport.h"
 #include "Unit.h"
@@ -1900,7 +1900,7 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
         if (TempSummon* summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, duration, m_originalCaster, m_spellInfo->Id, 0, personalSpawn, health))
         {
             // Summoned vehicles shall be mounted right away if possible
-            if (properties->Control == SUMMON_CATEGORY_VEHICLE && summon->IsVehicle())
+            if (SummonControl(properties->Control) == SummonControl::Vehicle && summon->IsVehicle())
             {
                 // The spell that this effect will trigger. It has SPELL_AURA_CONTROL_VEHICLE
                 uint32 spellId = VEHICLE_SPELL_RIDE_HARDCODED;
@@ -2431,7 +2431,7 @@ void Spell::EffectTameCreature(SpellEffIndex /*effIndex*/)
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
         return;
 
-    if (m_caster->GetPetGUID())
+    if (m_caster->GetPetSummonSlotGUID())
         return;
 
     if (!unitTarget)
@@ -2448,10 +2448,6 @@ void Spell::EffectTameCreature(SpellEffIndex /*effIndex*/)
     if (m_caster->getClass() != CLASS_HUNTER)
         return;
 
-    // cast finish successfully
-    //SendChannelUpdate(0);
-    finish();
-
     Pet* pet = m_caster->CreateTamedPetFrom(creatureTarget, m_spellInfo->Id);
     if (!pet)                                               // in very specific state like near world end/etc.
         return;
@@ -2464,11 +2460,9 @@ void Spell::EffectTameCreature(SpellEffIndex /*effIndex*/)
     // add to world
     pet->GetMap()->AddToMap(pet->ToCreature());
 
-    // caster have pet now
-    m_caster->SetMinion(pet, true);
-
+    m_caster->SetActiveGuardian(pet, true);
     pet->InitTalentForLevel();
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         pet->SavePetToDB(PET_SAVE_NEW_PET);
         if (pet->GetSlot() <= PET_SLOT_LAST_ACTIVE_SLOT)
@@ -3378,20 +3372,11 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
                     return;
                 }
                 // Stoneclaw Totem
-                case 55328: // Rank 1
-                case 55329: // Rank 2
-                case 55330: // Rank 3
-                case 55332: // Rank 4
-                case 55333: // Rank 5
-                case 55335: // Rank 6
-                case 55278: // Rank 7
-                case 58589: // Rank 8
-                case 58590: // Rank 9
-                case 58591: // Rank 10
+                case 55328:
                 {
                     int32 basepoints0 = damage;
                     // Cast Absorb on totems
-                    for (uint8 slot = SUMMON_SLOT_TOTEM_FIRE; slot < MAX_TOTEM_SLOT; ++slot)
+                    for (uint8 slot = uint8(SummonSlot::TotemFire); slot < uint8(SummonSlot::Max); ++slot)
                     {
                         if (!unitTarget->m_SummonSlot[slot])
                             continue;
@@ -4645,7 +4630,7 @@ void Spell::EffectDestroyAllTotems(SpellEffIndex /*effIndex*/)
         return;
 
     int32 mana = 0;
-    for (uint8 slot = SUMMON_SLOT_TOTEM_FIRE; slot < MAX_TOTEM_SLOT; ++slot)
+    for (uint8 slot = uint8(SummonSlot::TotemFire); slot < uint8(SummonSlot::Max); ++slot)
     {
         if (!m_caster->m_SummonSlot[slot])
             continue;
@@ -5190,7 +5175,7 @@ void Spell::EffectCreateTamedPet(SpellEffIndex effIndex)
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
         return;
 
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER || unitTarget->GetPetGUID() || unitTarget->getClass() != CLASS_HUNTER)
+    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER || unitTarget->GetPetSummonSlotGUID() || unitTarget->getClass() != CLASS_HUNTER)
         return;
 
     uint32 creatureEntry = m_spellInfo->Effects[effIndex].MiscValue;
@@ -5205,9 +5190,6 @@ void Spell::EffectCreateTamedPet(SpellEffIndex effIndex)
 
     // add to world
     pet->GetMap()->AddToMap(pet->ToCreature());
-
-    // unitTarget has pet now
-    unitTarget->SetMinion(pet, true);
 
     pet->InitTalentForLevel();
 

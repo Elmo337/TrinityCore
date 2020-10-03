@@ -23,13 +23,14 @@
 
 #include "ScriptMgr.h"
 #include "Group.h"
+#include "Minion.h"
 #include "Player.h"
 #include "SpellAuraEffects.h"
 #include "SpellScript.h"
 #include "SpellHistory.h"
 #include "SpellMgr.h"
 #include "Spell.h"
-#include "TemporarySummon.h"
+#include "TempSummon.h"
 
 enum PaladinSpells
 {
@@ -1656,7 +1657,7 @@ class spell_pal_ancient_healer : public AuraScript
         int32 bp1 = CalculatePct(heal->GetHeal(), 10);
 
 
-        for (Unit* guardian : GetTarget()->m_Controlled)
+        for (Minion* guardian : GetTarget()->_createdMinions)
         {
             if (guardian->GetUInt32Value(UNIT_CREATED_BY_SPELL) == SPELL_PALADIN_GUARDIAN_OF_ANCIENT_KINGS_HOLY)
                 guardian->CastCustomSpell(heal->GetTarget(), SPELL_PALADIN_LIGHT_OF_THE_ANCIENT_KINGS, &bp0, &bp1, nullptr, false, nullptr, aurEff);
