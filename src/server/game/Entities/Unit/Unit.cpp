@@ -11432,18 +11432,7 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
             }
         }
         else
-        {
             player->SendDirectMessage(&data);
-
-            if (creature)
-            {
-                WorldPackets::Loot::LootList lootList;
-                lootList.Owner = creature->GetGUID();
-                lootList.RoundRobinWinner = player->GetGUID();
-
-                player->SendMessageToSet(lootList.Write(), true);
-            }
-        }
 
         // Generate loot before updating looter
         if (creature)
