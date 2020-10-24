@@ -34,13 +34,24 @@ void Guardian::InitStats(uint32 duration)
     // Guardians get their summoner's guid assigned as owner guid
     m_owner->SetOwnerOfMinion(this, true);
 
-    InitStatsForLevel(m_owner->getLevel());
-
     if (m_owner->IsPlayer())
         m_charmInfo->InitCharmCreateSpells();
 
     SetReactState(REACT_ASSIST);
 }
+
+void Guardian::InitSummon()
+{
+    Minion::InitSummon();
+
+    // Only one guardian can be active at a time
+    UnsummonActiveGuardian();
+    m_owner->SetActiveGuardian(this, true);
+
+    if (m_owner->IsPlayer() && m_owner->GetActiveGuardianGUID() == GetGUID() && !m_owner->GetCharmedGUID())
+        m_owner->ToPlayer()->CharmSpellInitialize();
+}
+
 
 void Guardian::RemoveFromWorld()
 {
@@ -57,16 +68,38 @@ void Guardian::RemoveFromWorld()
     Minion::RemoveFromWorld();
 }
 
-void Guardian::InitSummon()
+bool Guardian::InitStatsForLevel(uint8 petlevel, bool /*referenceOwner*/)
 {
-    Minion::InitSummon();
+    //Determine pet type
+    PetType petType = MAX_PET_TYPE;
+    if (IsPet() && m_owner->IsPlayer())
+    {
+        switch (m_owner->getClass())
+        {
+            case CLASS_WARLOCK:
+            case CLASS_SHAMAN:
+            case CLASS_DEATH_KNIGHT:
+            case CLASS_MAGE:
+            case CLASS_PRIEST:
+                petType = SUMMON_PET;
+                break;
+            case CLASS_HUNTER:
+                petType = HUNTER_PET;
+                m_unitTypeMask |= UNIT_MASK_HUNTER_PET;
+                break;
+            default:
+                TC_LOG_ERROR("entities.pet", "Unknown type pet %u is summoned by player class %u",
+                    GetEntry(), GetOwner()->getClass());
+                break;
+        }
+    }
 
-    // Only one guardian can be active at a time
-    UnsummonActiveGuardian();
-    m_owner->SetActiveGuardian(this, true);
+    // Damage
+    SetBonusDamage(0);
 
-    if (m_owner->IsPlayer() && m_owner->GetActiveGuardianGUID() == GetGUID() && !m_owner->GetCharmedGUID())
-        m_owner->ToPlayer()->CharmSpellInitialize();
+    Minion::InitStatsForLevel(petlevel, true);
+
+    return true;
 }
 
 void Guardian::UnsummonActiveGuardian()
