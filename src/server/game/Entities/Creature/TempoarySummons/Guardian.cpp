@@ -71,7 +71,6 @@ void Guardian::RemoveFromWorld()
 bool Guardian::InitStatsForLevel(uint8 petlevel, bool /*referenceOwner*/)
 {
     //Determine pet type
-    PetType petType = MAX_PET_TYPE;
     if (IsPet() && m_owner->IsPlayer())
     {
         switch (m_owner->getClass())
@@ -81,10 +80,8 @@ bool Guardian::InitStatsForLevel(uint8 petlevel, bool /*referenceOwner*/)
             case CLASS_DEATH_KNIGHT:
             case CLASS_MAGE:
             case CLASS_PRIEST:
-                petType = SUMMON_PET;
                 break;
             case CLASS_HUNTER:
-                petType = HUNTER_PET;
                 m_unitTypeMask |= UNIT_MASK_HUNTER_PET;
                 break;
             default:
@@ -94,9 +91,12 @@ bool Guardian::InitStatsForLevel(uint8 petlevel, bool /*referenceOwner*/)
         }
     }
 
+    // Patch 3.1.0 (2009-04-14): All Cunning, Ferocity, and Tenacity pets now have identical bonuses - +5% Health,+5% Armor,+5% Damage. 
+    if (IsHunterPet())
+        SetMaxHealthModifier(0.049999952f); // Sniffed value
+
     // Damage
     SetBonusDamage(0);
-
     Minion::InitStatsForLevel(petlevel, true);
 
     return true;

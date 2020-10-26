@@ -125,7 +125,7 @@ bool Minion::InitStatsForLevel(uint8 level, bool referenceOwner /*= false*/)
     ASSERT(cInfo);
 
     SetLevel(level);
-    uint8 expansion = IsHunterPet() ? 0 : cInfo->expansion;
+    uint8 expansion = IsHunterPet() ? EXPANSION_CLASSIC : cInfo->expansion;
 
     // If we inherit the level of our owner, we change our expansion based on his reached level
     uint8 ownerLevel = m_owner->getLevel();
@@ -142,13 +142,14 @@ bool Minion::InitStatsForLevel(uint8 level, bool referenceOwner /*= false*/)
     }
 
     uint32 rank = cInfo->rank;
-    CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(getLevel(), cInfo->unit_class);
+    CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(getLevel(), IsHunterPet() ? UNIT_CLASS_WARRIOR : cInfo->unit_class);
 
     // Health
-    float healthmod = _GetHealthMod(rank);
+    float healthmod = IsHunterPet() ? 1.f : _GetHealthMod(rank);
 
     uint32 basehp = uint32(std::ceil(stats->BaseHealth[expansion] * cInfo->ModHealth * cInfo->ModHealthExtra));
     uint32 health = uint32(basehp * healthmod);
+    AddPct(health, GetMaxHealthModifier());
 
     SetCreateHealth(health);
     SetMaxHealth(health);
@@ -156,18 +157,19 @@ bool Minion::InitStatsForLevel(uint8 level, bool referenceOwner /*= false*/)
     ResetPlayerDamageReq();
 
     // Mana
-    uint32 mana = 0;
-    if (uint32 basemana = stats->BaseMana)
-        mana = uint32(std::ceil(basemana * cInfo->ModMana * cInfo->ModManaExtra));
-    SetCreateMana(mana);
-
     switch (getClass())
     {
         case UNIT_CLASS_PALADIN:
         case UNIT_CLASS_MAGE:
+        {
+            uint32 mana = 0;
+            if (uint32 basemana = stats->BaseMana)
+                mana = uint32(std::ceil(basemana * cInfo->ModMana * cInfo->ModManaExtra));
+            SetCreateMana(mana);
             SetMaxPower(POWER_MANA, mana);
             SetFullPower(POWER_MANA);
             break;
+        }
         default: // We don't set max power here, 0 makes power bar hidden
             break;
     }
@@ -194,15 +196,15 @@ bool Minion::InitStatsForLevel(uint8 level, bool referenceOwner /*= false*/)
 
     // From here on we do own additional steps
     SetMeleeDamageSchool(SpellSchools(cInfo->dmgschool));
-    SetAttackTime(BASE_ATTACK, cInfo->BaseAttackTime);
-    SetAttackTime(OFF_ATTACK, cInfo->BaseAttackTime);
-    SetAttackTime(RANGED_ATTACK, cInfo->RangeAttackTime);
+    SetAttackTime(BASE_ATTACK, IsHunterPet() ? BASE_ATTACK_TIME : cInfo->BaseAttackTime);
+    SetAttackTime(OFF_ATTACK, IsHunterPet() ? BASE_ATTACK_TIME : cInfo->BaseAttackTime);
+    SetAttackTime(RANGED_ATTACK, IsHunterPet() ? BASE_ATTACK_TIME : cInfo->BaseAttackTime);
     SetCanModifyStats(true);
 
     // Power
     if (IsHunterPet())
         SetPowerType(POWER_FOCUS);
-    if (IsPetGhoul() || IsRisenAlly())
+    else if (IsPetGhoul() || IsRisenAlly())
         SetPowerType(POWER_ENERGY);
     else
         SetPowerType(POWER_MANA);
