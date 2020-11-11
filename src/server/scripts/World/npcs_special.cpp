@@ -1715,8 +1715,9 @@ enum TrainingDummy
     NPC_ADVANCED_TARGET_DUMMY                  = 2674,
     NPC_TARGET_DUMMY                           = 2673,
     NPC_SPELL_PRACTICE_CREDIT                  = 44175,
+    NPC_SPELL_JUGDEMENT_CREDIT                 = 44420,
     SPELL_CHARGE                               = 100,
-    SPELL_JUDGEMENT                            = 29271,
+    SPELL_JUDGEMENT                            = 20271,
     SPELL_STEADY_SHOT                          = 56641,
     SPELL_EVISCERATE                           = 2098,
     SPELL_PRIMAL_STRIKE                        = 73899,
@@ -1749,11 +1750,24 @@ struct npc_training_dummy : NullCreatureAI
         switch (spell->Id)
         {
             case SPELL_CHARGE:          // Charge - Warrior
+                if (caster->GetTypeId() == TYPEID_PLAYER)
+                    caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_PRACTICE_CREDIT);
             case SPELL_JUDGEMENT:       // Judgement - Paladin
+                if (caster->GetTypeId() == TYPEID_PLAYER)
+                    caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_PRACTICE_CREDIT);
+                    caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_JUGDEMENT_CREDIT);
             case SPELL_STEADY_SHOT:     // Steady Shot - Hunter
+                if (caster->GetTypeId() == TYPEID_PLAYER)
+                    caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_PRACTICE_CREDIT);
             case SPELL_EVISCERATE:      // Eviscerate - Rouge
+                if (caster->GetTypeId() == TYPEID_PLAYER)
+                    caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_PRACTICE_CREDIT);
             case SPELL_PRIMAL_STRIKE:   // Primal Strike - Shaman
+                if (caster->GetTypeId() == TYPEID_PLAYER)
+                    caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_PRACTICE_CREDIT);
             case SPELL_IMMOLATE:        // Immolate - Warlock
+                if (caster->GetTypeId() == TYPEID_PLAYER)
+                    caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_PRACTICE_CREDIT);
             case SPELL_ARCANE_MISSILES: // Arcane Missiles - Mage
                 if (caster->GetTypeId() == TYPEID_PLAYER)
                     caster->ToPlayer()->KilledMonsterCredit(NPC_SPELL_PRACTICE_CREDIT);
